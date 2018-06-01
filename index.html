@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>    
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">    
+    <link rel="stylesheet" href="https://js.arcgis.com/4.7/esri/css/main.css">
+    <script src="https://js.arcgis.com/4.7/"></script>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/Graphic",
+            "esri/layers/GraphicsLayer",
+            "esri/geometry/Point",
+            "esri/request",
+            "dojo/domReady!"
+        ], function(Map, MapView, Graphic, GraphicsLayer, Point, esriRequst) {
+
+            let lat = 47.25498;
+            let lon = -122.43191
+
+
+            let map = new Map({
+            basemap: "topo"
+            });
+
+            var graphicsLayer = new GraphicsLayer({ 
+                // popupTemplate: template 
+                });
+            map.add(graphicsLayer);
+
+            let view = new MapView({
+            container: "viewDiv",
+            map: map,
+            zoom: 9,
+            center: [lon, lat] // longitude, latitude
+            });
+
+            var markerSymbol = {
+                "color":[
+                    226,
+                    119,
+                    40,
+                    255
+                ],
+                "size":12,
+                "angle":0,
+                "xoffset":0,
+                "yoffset":0,
+                "type":"esriSMS",
+                "style":"esriSMSCircle",
+                "outline":{
+                    "color":[
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "width":1.5,
+                    "type":"esriSLS",
+                    "style":"esriSLSSolid"
+                }
+                };
+
+            view.when(function () {
+                esriRequst('json/pre1998geo.json', {
+                    responseType: 'json',
+                }).then(function (response) {
+                    console.log(response.data)
+                    return response.data.features.map(function(x) {
+                        var c = x.geometry.coordinates;
+                        return Graphic.fromJSON({
+                        geometry: {
+                            x: c[0],
+                            y: c[1],
+                            spatialReference: { wkid: 4326 }
+                        },
+                        symbol: markerSymbol,
+                        attributes: x.properties,
+                        popupTemplate: {
+                            title: 'Study ID: {StudyID}',                          
+                            description: '{ChemicalName}: {ChemicalConc} {ReportedUOM}<br>Exceedance: {Exceedance}<br>Date: {SamplingDate}'
+                        }
+                        });
+                    });
+                }).then(function (features) {
+                    features.map(function(x) {
+                        graphicsLayer.add(x);
+                    });
+                });            
+            });                    
+            
+
+        });
+    </script>
+
+</head>
+
+<body>
+        <div id="viewDiv"></div>
+</body>
+
+</html>
